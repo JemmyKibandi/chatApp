@@ -1,0 +1,13 @@
+# Node
+node_modules/
+.env
+
+# React build
+client/build/
+
+# Logs
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
