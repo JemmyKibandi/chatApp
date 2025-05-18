@@ -29,8 +29,11 @@ app.get("/", (req, res) => {
 });
 
 // Routes
-const authRoutes = require("./routes/Auth");
+const authRoutes = require("./routes/auth");
 app.use("/api/auth", authRoutes);
+
+const messageRoutes = require("./routes/messages");
+app.use("/api/messages", messageRoutes);
 
 // Start server
 const PORT = process.env.PORT || 5000;
