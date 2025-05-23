@@ -7,7 +7,7 @@ const auth = require("../middleware/auth");
 
 
 // Get contacts — protected route example
-router.get("/", async (req, res) => {
+router.get("/users", async (req, res) => {
   try {
     // You can exclude the current user by filtering out req.user.userId if you want
     const users = await User.find({}, "username");
@@ -35,7 +35,6 @@ router.post("/register", async (req, res) => {
   }
 });
 
-// Login
 // Login
 router.post("/login", async (req, res) => {
   const { username, password } = req.body;
