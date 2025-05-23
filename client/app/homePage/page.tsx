@@ -19,7 +19,7 @@ export default function ChatPage() {
   useEffect(() => {
     async function loadUsers() {
       try {
-        const res = await fetch("/api/auth/");
+        const res = await fetch("http://localhost:5000/api/auth/users");
         if (!res.ok) throw new Error("Failed to fetch users");
         const users: User[] = await res.json();
         setContacts(users);
