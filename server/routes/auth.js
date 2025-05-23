@@ -36,7 +36,8 @@ router.post("/register", async (req, res) => {
 });
 
 // Login
-router.post("/login", auth, async (req, res) => {
+// Login
+router.post("/login", async (req, res) => {
   const { username, password } = req.body;
 
   try {
@@ -47,10 +48,18 @@ router.post("/login", auth, async (req, res) => {
     if (!isMatch) return res.status(400).json({ message: "Invalid credentials" });
 
     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: "1d" });
-    res.json({ token, user: { id: user._id, username: user.username } });
+
+    res.json({
+      token,
+      user: {
+        id: user._id,
+        username: user.username
+      }
+    });
   } catch (err) {
     res.status(500).json({ message: "Server error" });
   }
 });
+
 
 module.exports = router;
