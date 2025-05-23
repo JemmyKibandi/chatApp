@@ -1,9 +1,21 @@
-// server/routes/auth.js
 const express = require("express");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const router = express.Router();
 const User = require("../models/User");
+const auth = require("../middleware/auth");
+
+
+// Get contacts — protected route example
+router.get("/", async (req, res) => {
+  try {
+    // You can exclude the current user by filtering out req.user.userId if you want
+    const users = await User.find({}, "username");
+    res.json(users);
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
+  }
+});
 
 // Register
 router.post("/register", async (req, res) => {
@@ -24,6 +36,7 @@ router.post("/register", async (req, res) => {
 });
 
 // Login
+// Login
 router.post("/login", async (req, res) => {
   const { username, password } = req.body;
 
@@ -35,10 +48,18 @@ router.post("/login", async (req, res) => {
     if (!isMatch) return res.status(400).json({ message: "Invalid credentials" });
 
     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: "1d" });
-    res.json({ token, user: { id: user._id, username: user.username } });
+
+    res.json({
+      token,
+      user: {
+        id: user._id,
+        username: user.username
+      }
+    });
   } catch (err) {
     res.status(500).json({ message: "Server error" });
   }
 });
+
 
 module.exports = router;
