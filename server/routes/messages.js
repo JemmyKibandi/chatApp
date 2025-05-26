@@ -25,4 +25,21 @@ router.post("/", async (req, res) => {
   }
 });
 
+//FETCH /api/id
+router.get("/:chatID", async (req, res) => {
+  const { chatID } = req.params;
+
+  if (!chatID) {
+    return res.status(400).json({ message: "Chat ID is required" });
+  }
+
+  try {
+    const messages = await Message.find({ chatID }).sort({ createdAt: 1 });
+    res.status(200).json(messages);
+  } catch (error) {
+    console.error("Fetch messages error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
 module.exports = router;
