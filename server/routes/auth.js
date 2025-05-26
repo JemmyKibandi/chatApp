@@ -6,7 +6,7 @@ const User = require("../models/User");
 const auth = require("../middleware/auth");
 
 
-// Get contacts — protected route example
+// Get contacts
 router.get("/users", async (req, res) => {
   try {
     // You can exclude the current user by filtering out req.user.userId if you want
