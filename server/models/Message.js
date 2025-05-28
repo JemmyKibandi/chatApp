@@ -1,24 +1,19 @@
 const mongoose = require("mongoose");
 
-const MessageSchema = new mongoose.Schema({
-  chatID: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Chat",
-    required: true
+const messageSchema = new mongoose.Schema(
+  {
+    senderId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    receiverId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    conversationId: { type: String, required: true },
+    text: { type: String, required: true },
+    read: { type: Boolean, default: false },
   },
-  sender: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "User",
-    required: true
-  },
-  content: {
-    type: String,
-    required: true
-  },
-  timestamp: {
-    type: String, // Alternatively, use `Date` type if you want auto formatting
-    default: () => new Date().toISOString()
+  {
+    timestamps: true, // adds `createdAt` and `updatedAt`
   }
-});
+);
 
-module.exports = mongoose.model("Message", MessageSchema);
+// Optional: add an index for faster querying by conversation
+messageSchema.index({ conversationId: 1, createdAt: 1 });
+
+module.exports = mongoose.model("Message", messageSchema);

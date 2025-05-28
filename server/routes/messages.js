@@ -1,44 +1,50 @@
 const express = require("express");
 const router = express.Router();
 const Message = require("../models/Message");
+const auth = require("../middleware/auth");
+const { v4: uuidv4 } = require('uuid');
 
 // POST /api/messages
-router.post("/", async (req, res) => {
-  const { chatID, sender, content } = req.body;
-
-  if (!chatID || !sender || !content) {
-    return res.status(400).json({ message: "Missing required fields" });
-  }
-
+router.post('/', auth, async (req, res) => {
   try {
-    const newMessage = new Message({
-      chatID,
-      sender,
-      content
+    const senderId = req.user.userId; 
+    const { receiverId, text } = req.body;
+
+    if (!receiverId || !text?.trim()) {
+      return res.status(400).json({ error: 'Receiver ID and message text are required.' });
+    }
+
+    const conversationId = [senderId, receiverId].sort().join('_');
+
+    const message = new Message({
+      id: uuidv4(),
+      senderId,
+      receiverId,
+      text: text.trim(),
+      read: false,
+      timestamp: Date.now(),
+      conversationId,
     });
 
-    const savedMessage = await newMessage.save();
-    res.status(201).json(savedMessage);
-  } catch (error) {
-    console.error("Send message error:", error);
-    res.status(500).json({ message: "Server error" });
+    await message.save();
+
+    res.status(201).json({ message: 'Message sent', data: message });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error while sending message' });
   }
 });
 
-//FETCH /api/id
-router.get("/:chatID", async (req, res) => {
-  const { chatID } = req.params;
-
-  if (!chatID) {
-    return res.status(400).json({ message: "Chat ID is required" });
-  }
+// Get all messages by conversationId
+router.get("/:conversationId", auth, async (req, res) => {
+  const { conversationId } = req.params;
 
   try {
-    const messages = await Message.find({ chatID }).sort({ createdAt: 1 });
-    res.status(200).json(messages);
-  } catch (error) {
-    console.error("Fetch messages error:", error);
-    res.status(500).json({ message: "Server error" });
+    const messages = await Message.find({ conversationId }).sort({ createdAt: 1 });
+    res.json(messages);
+  } catch (err) {
+    console.error("❌ Error fetching messages:", err);
+    res.status(500).json({ error: "Failed to fetch messages" });
   }
 });
 

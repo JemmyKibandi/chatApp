@@ -1,20 +1,43 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { useRouter } from "next/navigation"; // For programmatic navigation
+import React, { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 
 type User = {
   _id: string;
   username: string;
 };
 
+type Message = {
+  _id: string;
+  senderId: string;
+  receiverId: string;
+  text: string;
+  createdAt: string;
+};
+
 export default function ChatPage() {
   const [contacts, setContacts] = useState<User[]>([]);
   const [activeContact, setActiveContact] = useState<User | null>(null);
-  const [loadingContacts, setLoadingContacts] = useState(true);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [message, setMessage] = useState("");
+  const [loadingContacts, setLoadingContacts] = useState(true);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const router = useRouter();
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    try {
+      const payload = JSON.parse(atob(token.split(".")[1]));
+      setCurrentUserId(payload.userId);
+    } catch (err) {
+      console.error("Invalid token");
+    }
+  }, []);
 
   useEffect(() => {
     async function loadUsers() {
@@ -33,11 +56,93 @@ export default function ChatPage() {
     loadUsers();
   }, []);
 
-  // 🔐 Logout handler
+  useEffect(() => {
+    async function fetchMessages() {
+      if (!activeContact || !currentUserId) return;
+
+      const token = localStorage.getItem("token");
+      const conversationId = [currentUserId, activeContact._id].sort().join("_");
+
+      try {
+        const res = await fetch(`http://localhost:5000/api/messages/${conversationId}?limit=30`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (!res.ok) throw new Error("Failed to fetch messages");
+
+        const data: Message[] = await res.json();
+        setMessages(data);
+
+        // Auto-mark as read (optional backend endpoint)
+        await fetch(`http://localhost:5000/api/messages/${conversationId}/read`, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      } catch (error) {
+        console.error("Error fetching messages:", error);
+        setMessages([]);
+      }
+    }
+
+    fetchMessages();
+  }, [activeContact, currentUserId]);
+
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages]);
+
+  async function handleSendMessage() {
+    if (!activeContact || message.trim() === "") return;
+
+    const token = localStorage.getItem("token");
+
+    try {
+      const response = await fetch("http://localhost:5000/api/messages/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          receiverId: activeContact._id,
+          text: message,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) throw new Error(result.error || "Failed to send message");
+
+      setMessages((prev) => [...prev, result.data]);
+      setMessage("");
+    } catch (error) {
+      console.error("❌ Error sending message:", message);
+    }
+  }
+
   function handleLogout() {
-    localStorage.removeItem("token"); // Or sessionStorage, depending on what you use
+    localStorage.removeItem("token");
     router.push("/login");
   }
+
+  function formatDateGroup(dateString: string): string {
+    const date = new Date(dateString);
+    return date.toDateString();
+  }
+
+  function formatTime(timestamp: string): string {
+    const date = new Date(timestamp);
+    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  }
+
+  const groupedMessages = messages.reduce((acc, msg) => {
+    const dateKey = formatDateGroup(msg.createdAt);
+    acc[dateKey] = acc[dateKey] || [];
+    acc[dateKey].push(msg);
+    return acc;
+  }, {} as Record<string, Message[]>);
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-pink-100 via-purple-100 to-lilac-200 font-sans">
@@ -85,20 +190,40 @@ export default function ChatPage() {
 
         {/* Chat Area */}
         <main className="flex-1 p-6 flex flex-col">
-          <div className="flex-1 bg-white rounded-2xl shadow-inner p-4 overflow-y-auto mb-4">
+          <div className="flex-1 bg-white rounded-2xl shadow-inner p-4 overflow-y-auto mb-4 flex flex-col space-y-3">
             {activeContact ? (
-              <p className="text-purple-700">
-                Chatting with <strong>{activeContact.username}</strong>...
-              </p>
+              Object.entries(groupedMessages).map(([date, msgs]) => (
+                <div key={date} className="space-y-2">
+                  <div className="text-center text-purple-500 font-medium my-2">{date}</div>
+                  {msgs.map((msg) => (
+                    <div
+                      key={msg._id}
+                      className={`max-w-xs px-4 py-2 rounded-2xl shadow text-white relative ${
+                        msg.senderId === currentUserId
+                          ? "bg-purple-400 self-end ml-auto text-right"
+                          : "bg-pink-300 self-start mr-auto text-left"
+                      }`}
+                    >
+                      {msg.text}
+                      <div className="text-xs text-gray-200 mt-1">
+                        {formatTime(msg.createdAt)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ))
             ) : (
               <p className="text-purple-700">Select a contact to start chatting.</p>
             )}
+            <div ref={messagesEndRef} />
           </div>
+
+          {/* Input */}
           <div className="flex gap-2">
             <input
               type="text"
               placeholder="Type a message..."
-              className="flex-1 rounded-full px-4 py-2 bg-purple-50 border border-purple-300 focus:outline-none focus:ring-2 focus:ring-purple-300"
+              className="flex-1 rounded-full px-4 py-2 bg-white text-black border border-purple-300 focus:outline-none focus:ring-2 focus:ring-purple-300"
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               disabled={!activeContact}
@@ -106,10 +231,7 @@ export default function ChatPage() {
             <button
               className="bg-purple-400 hover:bg-purple-500 text-white px-6 py-2 rounded-full shadow-md transition"
               disabled={!activeContact || message.trim() === ""}
-              onClick={() => {
-                console.log("Send message to", activeContact?.username, ":", message);
-                setMessage("");
-              }}
+              onClick={handleSendMessage}
             >
               Send
             </button>
