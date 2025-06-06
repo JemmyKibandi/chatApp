@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+const [isOpen, setIsOpen] = useState(false);
 
 type User = {
   _id: string;
@@ -61,12 +62,17 @@ export default function ChatPage() {
       if (!activeContact || !currentUserId) return;
 
       const token = localStorage.getItem("token");
-      const conversationId = [currentUserId, activeContact._id].sort().join("_");
+      const conversationId = [currentUserId, activeContact._id]
+        .sort()
+        .join("_");
 
       try {
-        const res = await fetch(`http://localhost:5000/api/messages/${conversationId}?limit=30`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await fetch(
+          `http://localhost:5000/api/messages/${conversationId}?limit=30`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
 
         if (!res.ok) throw new Error("Failed to fetch messages");
 
@@ -74,10 +80,13 @@ export default function ChatPage() {
         setMessages(data);
 
         // Auto-mark as read (optional backend endpoint)
-        await fetch(`http://localhost:5000/api/messages/${conversationId}/read`, {
-          method: "POST",
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        await fetch(
+          `http://localhost:5000/api/messages/${conversationId}/read`,
+          {
+            method: "POST",
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
       } catch (error) {
         console.error("Error fetching messages:", error);
         setMessages([]);
@@ -113,7 +122,8 @@ export default function ChatPage() {
 
       const result = await response.json();
 
-      if (!response.ok) throw new Error(result.error || "Failed to send message");
+      if (!response.ok)
+        throw new Error(result.error || "Failed to send message");
 
       setMessages((prev) => [...prev, result.data]);
       setMessage("");
@@ -148,7 +158,10 @@ export default function ChatPage() {
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-pink-100 via-purple-100 to-lilac-200 font-sans">
       {/* Navbar */}
       <nav className="flex justify-between items-center px-6 py-4 bg-purple-200 shadow-md rounded-b-xl">
-        <h1 className="text-2xl font-caveat-bold text-purple-800"> 💎 UnityApp</h1>
+        <h1 className="text-2xl font-caveat-bold text-purple-800">
+          {" "}
+          💎 UnityApp
+        </h1>
         <div className="flex gap-2">
           <button className="bg-purple-400 hover:bg-purple-500 text-white px-4 py-2 rounded-xl shadow-md transition">
             + Add New Contact
@@ -166,7 +179,9 @@ export default function ChatPage() {
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar */}
         <aside className="w-64 bg-purple-100 border-r border-purple-300 p-4 overflow-y-auto">
-          <h2 className="text-lg font-semibold text-purple-700 mb-4">Contacts</h2>
+          <h2 className="text-lg font-semibold text-purple-700 mb-4">
+            Contacts
+          </h2>
           {loadingContacts ? (
             <p className="text-purple-700">Loading contacts...</p>
           ) : (
@@ -174,7 +189,7 @@ export default function ChatPage() {
               {contacts.map((contact) => (
                 <li
                   key={contact._id}
-                  className={`p-3 rounded-xl cursor-pointer transition ${
+                  className={`p-3 rounded-3xl cursor-pointer transition ${
                     activeContact?._id === contact._id
                       ? "bg-purple-300 text-white"
                       : "hover:bg-purple-200 text-purple-700"
@@ -194,11 +209,13 @@ export default function ChatPage() {
             {activeContact ? (
               Object.entries(groupedMessages).map(([date, msgs]) => (
                 <div key={date} className="space-y-2">
-                  <div className="text-center text-purple-500 font-medium my-2">{date}</div>
+                  <div className="text-center text-purple-500 font-medium my-2">
+                    {date}
+                  </div>
                   {msgs.map((msg) => (
                     <div
                       key={msg._id}
-                      className={`max-w-xs px-4 py-2 rounded-2xl shadow text-white relative ${
+                      className={`max-w-xs px-4 py-2 rounded-4xl shadow text-white relative ${
                         msg.senderId === currentUserId
                           ? "bg-purple-400 self-end ml-auto text-right"
                           : "bg-pink-300 self-start mr-auto text-left"
@@ -213,21 +230,30 @@ export default function ChatPage() {
                 </div>
               ))
             ) : (
-              <p className="text-purple-700">Select a contact to start chatting.</p>
+              <p className="text-purple-700">
+                Select a contact to start chatting.
+              </p>
             )}
             <div ref={messagesEndRef} />
           </div>
 
           {/* Input */}
           <div className="flex gap-2">
-            <input
-              type="text"
+            <textarea
               placeholder="Type a message..."
-              className="flex-1 rounded-full px-4 py-2 bg-white text-black border border-purple-300 focus:outline-none focus:ring-2 focus:ring-purple-300"
+              className="flex-1 rounded-full px-4 py-2 bg-white text-black border border-purple-300 focus:outline-none focus:ring-2 focus:ring-purple-300 resize-none"
               value={message}
               onChange={(e) => setMessage(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSendMessage();
+                }
+              }}
               disabled={!activeContact}
+              rows={1}
             />
+
             <button
               className="bg-purple-400 hover:bg-purple-500 text-white px-6 py-2 rounded-full shadow-md transition"
               disabled={!activeContact || message.trim() === ""}
