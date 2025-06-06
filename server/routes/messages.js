@@ -2,7 +2,6 @@ const express = require("express");
 const router = express.Router();
 const Message = require("../models/Message");
 const auth = require("../middleware/auth");
-const { v4: uuidv4 } = require('uuid');
 
 // POST /api/messages
 router.post('/', auth, async (req, res) => {
@@ -17,7 +16,6 @@ router.post('/', auth, async (req, res) => {
     const conversationId = [senderId, receiverId].sort().join('_');
 
     const message = new Message({
-      id: uuidv4(),
       senderId,
       receiverId,
       text: text.trim(),
