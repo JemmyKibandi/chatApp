@@ -260,26 +260,26 @@ export default function ChatPage() {
 
         {/* Sidebar */}
         {sidebarOpen && (
-          <aside className="w-64 bg-purple-100 border-r border-purple-300 p-4 overflow-y-auto h-screen">
+          <aside className="w-64 bg-purple-800 border-r border-purple-300 p-4 overflow-y-auto h-screen">
             {showOptions ? (
               <div className="space-y-4">
                 <button
                   onClick={() => {
                     setShowOptions(false);
                   }}
-                  className="flex items-center gap-2 text-purple-700 hover:text-purple-900"
+                  className="flex items-center gap-2 text-white hover:text-purple-900"
                 >
                   <FiUser /> Contacts
                 </button>
-                <button className="flex items-center gap-2 text-purple-700 hover:text-purple-900">
+                <button className="flex items-center gap-2 text-white hover:text-purple-900">
                   <FiSettings /> Settings
                 </button>
-                <button className="flex items-center gap-2 text-purple-700 hover:text-purple-900">
+                <button className="flex items-center gap-2 text-white hover:text-purple-900">
                   <FiLock /> Privacy
                 </button>
                 <button
                   onClick={handleLogout}
-                  className="flex items-center gap-2 text-purple-700 hover:text-purple-900"
+                  className="flex items-center gap-2 text-white hover:text-purple-900"
                 >
                   <FiLogOut /> Logout
                 </button>
@@ -296,15 +296,15 @@ export default function ChatPage() {
                 />
 
                 {/* Contacts Header */}
-                <h2 className="text-lg font-semibold text-purple-700 mb-4">
+                <h2 className="text-lg font-semibold text-white mb-4">
                   Contacts
                 </h2>
 
                 {/* Contacts List */}
                 {loadingContacts ? (
-                  <p className="text-purple-700">Loading contacts...</p>
+                  <p className="text-white">Loading contacts...</p>
                 ) : contactsWithLastMessage.length === 0 ? (
-                  <p className="text-purple-700">No contacts found</p>
+                  <p className="text-white">No contacts found</p>
                 ) : (
                   <ul className="space-y-2 max-h-[calc(100vh-10rem)] overflow-y-auto">
                     {contactsWithLastMessage.map((contact) => (
@@ -312,14 +312,14 @@ export default function ChatPage() {
                         key={contact._id}
                         onClick={() => {
                           setActiveContact(contact);
-                          setSidebarOpen(false);
+                          setSidebarOpen(true);
                           setShowOptions(true);
                           setSearch("");
                         }}
-                        className={`p-3 rounded-3xl cursor-pointer transition ${
+                        className={`p-3 rounded cursor-pointer transition ${
                           activeContact?._id === contact._id
                             ? "bg-purple-300 text-white"
-                            : "hover:bg-purple-200 text-purple-700"
+                            : "hover:bg-purple-200 text-white"
                         } flex justify-between items-center`}
                       >
                         <span>{contact.username}</span>
@@ -338,7 +338,7 @@ export default function ChatPage() {
         )}
 
         {/* Chat window */}
-        <main className="flex-1 p-6 flex flex-col">
+        <main className="flex-1 h-screen p-6 flex flex-col">
           <div className="flex-grow overflow-y-auto mb-6 space-y-6">
             {Object.entries(groupedMessages).map(([date, msgs]) => (
               <div key={date}>
